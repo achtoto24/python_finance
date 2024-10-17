@@ -11,11 +11,11 @@ parse_day = data_html.select_one(
     "div.subtop_sise_graph2 > ul.subtop_chart_note > li > span.tah"
 ).text
 
-print(parse_day)
+#print(parse_day)
 
 import re
 
-biz_day = re.findall("[0-9]+", parse_day)
-print(biz_day)
-print()
-print("".join(biz_day))
+biz_day = "".join(re.findall("[0-9]+", parse_day))
+
+#print(biz_day)
+#print()
