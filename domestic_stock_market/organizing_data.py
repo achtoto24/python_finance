@@ -68,12 +68,62 @@ krx_ind = pd.read_csv(BytesIO(krx_ind.content), encoding = "EUC-KR")
 krx_ind["종목명"] = krx_ind["종목명"].str.strip()
 krx_ind["기준일"] = biz_day
 
-#=========================================================================================
+#==========================================================================================================================================
 
 diff = list(set(krx_sector["종목명"]).symmetric_difference(set(krx_ind["종목명"])))
-print(diff)
+#print(diff)
 
 kor_ticker = pd.merge(krx_sector, krx_ind, on = krx_sector.columns.intersection(krx_ind.columns).tolist(), how='outer')
 
-from tabulate import tabulate
-print(tabulate(kor_ticker.head(40), headers='keys', tablefmt='pretty', showindex=False))
+# from tabulate import tabulate
+# print(tabulate(kor_ticker.head(40), headers='keys', tablefmt='pretty', showindex=False))
+
+# print(kor_ticker[kor_ticker["종목명"].str.contains("스팩|제[0-9]+호")]["종목명"].values)   # 스팩 종목 찾기
+# print()
+# print(kor_ticker[kor_ticker["종목코드"].str[-1:] != '0']["종목명"].values)  # 보통주가 아닌 우선주 찾기
+# print()
+# print(kor_ticker[kor_ticker["종목명"].str.endswith("리츠")]["종목명"].values)   # 리츠 종목 찾기
+
+import numpy as np
+
+kor_ticker["종목구분"] = np.where(kor_ticker["종목명"].str.contains("스팩|제[0-9]+호"), "스팩", 
+                        np.where(kor_ticker["종목코드"].str[-1:] != '0', "우선주",
+                        np.where(kor_ticker["종목명"].str.endswith("리츠"), "리츠", 
+                        np.where(kor_ticker["종목명"].isin(diff), "기타", "보통주"
+                        ))))
+
+kor_ticker = kor_ticker.reset_index(drop=True)
+kor_ticker.columns = kor_ticker.columns.str.replace(' ', '')
+kor_ticker = kor_ticker[["종목코드", "종목명", "시장구분", "종가", "시가총액", "기준일", "EPS", "선행EPS", "BPS", "주당배당금", "종목구분"]]
+kor_ticker = kor_ticker.replace({np.nan: None}) # nan -> None 바꾸기
+kor_ticker = kor_ticker.drop_duplicates(subset=["종목코드", "종목명"], keep='first')    # 중복된 종목 내용 제거
+kor_ticker["기준일"] = pd.to_datetime(kor_ticker["기준일"])
+
+print(kor_ticker.head(20))
+
+#==========================================================================================================================================
+
+import pymysql
+
+con = pymysql.connect(user = "root",
+                      passwd = "0000",
+                      host = "127.0.0.1",
+                      db = "stock_db",
+                      charset = "utf8")
+
+mycursor = con.cursor()
+query = f""" 
+        INSERT INTO kor_ticker (종목코드, 종목명, 시장구분, 종가, 시가총액, 기준일, EPS, 선행EPS, BPS, 주당배당금, 종목구분)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+        종목명 = VALUES(종목명), 시장구분 = VALUES(시장구분), 종가 = VALUES(종가), 
+        시가총액 = VALUES(시가총액), EPS = VALUES(EPS), 선행EPS = VALUES(선행EPS),
+        BPS = VALUES(BPS), 주당배당금 = VALUES(주당배당금), 종목구분 = VALUES(종목구분);
+        """
+
+args = kor_ticker.values.tolist()
+
+mycursor.executemany(query, args)
+con.commit()
+
+con.close()
