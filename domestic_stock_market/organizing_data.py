@@ -43,7 +43,7 @@ sector_ksq = pd.read_csv(BytesIO(down_sector_ksq.content), encoding="EUC-KR")
 
 krx_sector = pd.concat([sector_stk, sector_ksq]).reset_index(drop=True)
 krx_sector["종목명"] = krx_sector["종목명"].str.strip()     
-krx_sector["기준일"] = "2024.10.11"
+krx_sector["기준일"] = biz_day
 
 #individual_stock_indicators
 
