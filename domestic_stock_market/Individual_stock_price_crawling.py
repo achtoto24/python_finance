@@ -41,13 +41,14 @@ print(tabulate(data_price.head(), headers='keys', tablefmt='pretty', showindex=F
 
 #==================================================================================================================
 print()
+
 # 데이터 클렌징
 import re
 
-price = data_price.iloc[:, 0:6]     #?????????
+price = data_price.iloc[:, 0:6]     #전체 행, 0번째부터 5번째 열까지 
 price.columns = ["날짜", "시가", "고가", "저가", "종가", "거래량"]
 price = price.dropna()  # NA 데이터 삭제
-price["날짜"] = price["날짜"].str.extract("(\d+)")  #?????????  
+price["날짜"] = price["날짜"].str.extract("(\d+)")  # 숫자만 추출
 price["날짜"] = pd.to_datetime(price["날짜"])
 price["종목코드"] = ticker
 
