@@ -39,3 +39,23 @@ data_fs_y = data_fs_y.rename(columns={data_fs_y.columns[0] : "계정"})
 
 from tabulate import tabulate
 print(tabulate(data_fs_y.head(), headers='keys', tablefmt='pretty', showindex=False))
+
+#=========================================================================================================
+print()
+
+#연간 재무제표 날짜만 추출하기
+import requests as rq
+from bs4 import BeautifulSoup
+import re
+
+page_data = rq.get(url)
+page_data_html = BeautifulSoup(page_data.content, "html.parser")
+
+fiscal_data = page_data_html.select("div.corp_group1 > h2")
+fiscal_data_text = fiscal_data[1].text
+fiscal_data_text = re.findall("[0-9]+", fiscal_data_text)
+print(fiscal_data_text)
+print()
+data_fs_y = data_fs_y.loc[:, (data_fs_y.columns == "계정") | (data_fs_y.columns.str[-2:].isin(fiscal_data_text))]   # 열 이름이 '계정'인 것과 끝 두 글자가 '12'로 되어 있는 것들만 추출
+print(tabulate(data_fs_y.head(), headers='keys', tablefmt='pretty', showindex=False))
+
