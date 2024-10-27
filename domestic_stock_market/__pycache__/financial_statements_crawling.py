@@ -59,3 +59,31 @@ print()
 data_fs_y = data_fs_y.loc[:, (data_fs_y.columns == "계정") | (data_fs_y.columns.str[-2:].isin(fiscal_data_text))]   # 열 이름이 '계정'인 것과 끝 두 글자가 '12'로 되어 있는 것들만 추출
 print(tabulate(data_fs_y.head(), headers='keys', tablefmt='pretty', showindex=False))
 
+#=========================================================================================================
+
+#데이터 클렌징
+def clean_fs (df, ticker, frequency) :
+    
+    df = df[~df.loc[:, ~df.columns.isin(["계정"])].isna().all(axis=1)]               # 모든 연도의 데이터가 NaN인 항목은 제외
+    df = df.drop_duplicates(["계정"], keep="first")                                  # 계정명이 중복되는 경우 drop_duplicates() 함수를 이용해 첫 번째에 위치하는 데이터만 남김
+    df = pd.melt(df, id_vars="계정", var_name="기준일", value_name="값")              # melt() 함수를 이용해 열로 긴 데이터를 행으로 긴 데이터로 변경함
+    df = df[~pd.isnull(df["값"])]                                                    # 계정값이 없는 항목은 제외
+    df["계정"] = df["계정"].replace({"계산에 참여한 계정 펼치기" : ''}, regex=True)     # '계산에 참여한 계정 펼치기'라는 글자는 실제 페이지의 [+]에 해당하는 부분이므로 replace() 메서드로 제거함
+    df["기준일"] = df["기준일"].str.replace('/', '-')                                 # '기준일' 열 값을 수정하기
+    df["기준일"] = pd.to_datetime(df["기준일"], 
+                                format="%Y-%m") + pd.tseries.offsets.MonthEnd()      # to_datetime() 메서드를 통해 기준일을 'yyyy-mm'형태로 바꾼 후, MonthEnd()를 통해 월말에 해당하는 일을 붙임
+    df["종목코드"] = ticker
+    df["공시구분"] = frequency                                                        # '공시구분' 열에는 연간 또는 분기에 해당하는 값을 입력함
+
+    return df
+
+data_fs_y_clean = clean_fs(data_fs_y, ticker, 'y')
+# print(data_fs_y_clean.head())
+data_fs_q = pd.concat(
+    [data[1].iloc[:, ~data[1].columns.str.contains("전년동기")], data[3], data[5]])
+data_fs_q = data_fs_q.rename(columns={data_fs_q.columns[0]:"계정"})
+
+data_fs_q_clean = clean_fs(data_fs_q, ticker, 'q')
+
+data_fs_bind = pd.concat([data_fs_y_clean, data_fs_q_clean])
+print(tabulate(data_fs_bind.head(), headers='keys', tablefmt='pretty', showindex=False))
