@@ -41,6 +41,7 @@ otp_ksq = rq.post(gen_otp_url, gen_otp_ksq, headers=headers).text
 down_sector_ksq = rq.post(down_url, {"code" : otp_ksq}, headers=headers)
 sector_ksq = pd.read_csv(BytesIO(down_sector_ksq.content), encoding="EUC-KR")
 
+# krx_sector
 krx_sector = pd.concat([sector_stk, sector_ksq]).reset_index(drop=True)
 krx_sector["종목명"] = krx_sector["종목명"].str.strip()     
 krx_sector["기준일"] = biz_day
