@@ -46,7 +46,7 @@ krx_sector = pd.concat([sector_stk, sector_ksq]).reset_index(drop=True)
 krx_sector["종목명"] = krx_sector["종목명"].str.strip()     
 krx_sector["기준일"] = biz_day
 
-#individual_stock_indicators
+''' individual_stock_indicators_crawling '''
 
 gen_otp_url = "http://data.krx.co.kr/comm/fileDn/GenerateOTP/generate.cmd"
 gen_otp_data = {
@@ -72,7 +72,7 @@ krx_ind["기준일"] = biz_day
 #==========================================================================================================================================
 
 diff = list(set(krx_sector["종목명"]).symmetric_difference(set(krx_ind["종목명"])))
-#print(diff)
+# print(diff)
 
 kor_ticker = pd.merge(krx_sector, krx_ind, on = krx_sector.columns.intersection(krx_ind.columns).tolist(), how='outer')
 

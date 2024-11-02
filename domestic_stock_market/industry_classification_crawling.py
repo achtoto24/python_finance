@@ -31,7 +31,6 @@ otp_stk = rq.post(gen_otp_url, gen_otp_stk, headers=headers).text
 down_url = "http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd"
 
 down_sector_stk = rq.post(down_url, {"code" : otp_stk}, headers=headers)
-
 sector_stk = pd.read_csv(BytesIO(down_sector_stk.content), encoding="EUC-KR")
 
 #=======================================================================================
